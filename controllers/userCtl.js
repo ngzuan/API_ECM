@@ -6,11 +6,17 @@ const generateRefreshToken = require("../config/refreshToken");
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("./emailCtrl");
 const crypto = require("crypto");
+const { validateEmail, validateLength } = require("../util/validation");
+const Cart = require("../models/cartModel");
 
 // create user
 
 const createUser = asyncHandler(async (req, res) => {
   const email = req.body.email;
+  if (!validateEmail(email)) {
+    throw new Error("Please enter the correct Email!!!");
+  }
+
   const findUser = await User.findOne({ email: email });
   if (!findUser) {
     const newUser = await User.create(req.body);
@@ -304,6 +310,53 @@ const getWishlist = asyncHandler(async (req, res) => {
   }
 });
 // save adress
+const userCart = asyncHandler(async (req, res) => {
+  const { cart } = req.body;
+  const { _id } = req.user;
+  validateMongooseDBId(_id);
+  try {
+    let products = [];
+    const user = await User.findById(_id);
+    const alreadyExistCart = await Cart.findOne({ orderby: user._id });
+    if (alreadyExistCart) {
+      alreadyExistCart.remove();
+    }
+    for (let i = 0; i <= cart.length; i++) {
+      let object = {};
+      object.product = cart[i]._id;
+      object.count = cart[i].count;
+      object.color = cart[i].color;
+      let getPrice = await Product.findById(cart[i]._id).select("price").exec();
+      object.price = getPrice.price;
+      products.push(object);
+    }
+    let cartTotal = 0;
+    for (let i = 0; i <= products.length; i++) {
+      cartTotal = cartTotal + products[i].price * products.count;
+    }
+    let newCart = await new Cart({
+      products,
+      cartTotal,
+      orderby: user?._id,
+    }).save();
+    res.json(newCart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getUserCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongooseDBId(_id);
+  try {
+    const cart = await Cart.findById({ order: _id }).populate(
+      "products.product",
+    );
+    res.json(cart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
 
 module.exports = {
   createUser,
@@ -321,4 +374,6 @@ module.exports = {
   resetPassword,
   loginAdmin,
   getWishlist,
+  userCart,
+  getUserCart,
 };
