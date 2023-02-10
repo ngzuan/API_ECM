@@ -8,7 +8,10 @@ const { sendEmail } = require("./emailCtrl");
 const crypto = require("crypto");
 const { validateEmail, validateLength } = require("../util/validation");
 const Cart = require("../models/cartModel");
-
+const Coupon = require("../models/couponModel");
+const Product = require("../models/productModel");
+const Order = require("../models/orderModel");
+const uniqid = require("uniqid");
 // create user
 
 const createUser = asyncHandler(async (req, res) => {
@@ -69,7 +72,7 @@ const loginAdmin = asyncHandler(async (req, res) => {
   if (findAdmin && (await findAdmin.isPasswordMatched(password))) {
     const refreshToken = await generateRefreshToken(findAdmin?._id);
     // console.log(refreshToken);
-    const updateAdmin = await Admin.findByIdAndUpdate(
+    const updateAdmin = await User.findByIdAndUpdate(
       findAdmin.id,
       {
         refreshToken: refreshToken,
@@ -316,12 +319,13 @@ const userCart = asyncHandler(async (req, res) => {
   validateMongooseDBId(_id);
   try {
     let products = [];
+
     const user = await User.findById(_id);
     const alreadyExistCart = await Cart.findOne({ orderby: user._id });
     if (alreadyExistCart) {
       alreadyExistCart.remove();
     }
-    for (let i = 0; i <= cart.length; i++) {
+    for (let i = 0; i < cart.length; i++) {
       let object = {};
       object.product = cart[i]._id;
       object.count = cart[i].count;
@@ -331,9 +335,10 @@ const userCart = asyncHandler(async (req, res) => {
       products.push(object);
     }
     let cartTotal = 0;
-    for (let i = 0; i <= products.length; i++) {
-      cartTotal = cartTotal + products[i].price * products.count;
+    for (let i = 0; i < products.length; i++) {
+      cartTotal = cartTotal + products[i].price * products[i].count;
     }
+    console.log(products, cartTotal);
     let newCart = await new Cart({
       products,
       cartTotal,
@@ -349,7 +354,7 @@ const getUserCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongooseDBId(_id);
   try {
-    const cart = await Cart.findById({ order: _id }).populate(
+    const cart = await Cart.findOne({ orderby: _id }).populate(
       "products.product",
     );
     res.json(cart);
@@ -358,6 +363,117 @@ const getUserCart = asyncHandler(async (req, res) => {
   }
 });
 
+const emptyCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongooseDBId(_id);
+  try {
+    const user = await User.findOne(_id);
+    const cart = await Cart.findByIdAndRemove({ orderby: user._id });
+    res.json(cart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const applyCoupon = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongooseDBId(_id);
+  const { coupon } = req.body;
+  try {
+    const validCoupon = await Coupon.findOne({ name: coupon });
+    if (!validCoupon) {
+      throw new Error("valid Coupon");
+    }
+    let { cartTotal } = await Cart.findOne({ orderby: user._id }).populate(
+      "products.product",
+    );
+    let totalAfterDiscount = (
+      cartTotal -
+      (cartTotal * validCoupon.discount) / 100
+    ).toFixed(2);
+    await Cart.findOneAndUpdate(
+      { orderby: user_id },
+      {
+        totalAfterDiscount,
+      },
+      { new: true },
+    );
+    res.json(totalAfterDiscount);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const createOder = asyncHandler(async (req, res) => {
+  const { COD, couponApplied } = req.body;
+  console.log(COD);
+  const { _id } = req.user;
+  validateMongooseDBId(_id);
+  try {
+    if (!COD) throw new Error("Create cash order failed");
+    const user = await User.findById(_id);
+    const userCart = await Cart.findOne({ orderby: user._id });
+    let finalAmount = 0;
+    if (couponApplied && userCart.totalAfterDiscount) {
+      finalAmount = userCart.totalAfterDiscount * 100;
+    } else {
+      finalAmount = userCart.cartTotal * 100;
+    }
+    let newOrder = await new Order({
+      products: userCart.products,
+      paymentIntent: {
+        id: uniqid(),
+        method: "COD",
+        amount: finalAmount,
+        status: "Cash on Deliver",
+        create: Date.now(),
+        currency: "vnd",
+      },
+      orderby: user._id,
+      orderStatus: "Cash on Deliver",
+    }).save();
+    res.json("success:>");
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getOrder = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongooseDBId(_id);
+  try {
+    const order = await Order.findOne({ orderby: _id })
+      .populate("products.product")
+      .exec();
+    res.json(order);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const updateOrder = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+  const { id } = req.params;
+  validateMongooseDBId(id);
+  try {
+    const updateOrder = await Order.findByIdAndUpdate(
+      id,
+      {
+        orderStatus: status,
+        paymentIntent: {
+          status: status,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+    console.log(updateOrder);
+    res.json(updateOrder);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
 module.exports = {
   createUser,
   loginUser,
@@ -376,4 +492,9 @@ module.exports = {
   getWishlist,
   userCart,
   getUserCart,
+  emptyCart,
+  applyCoupon,
+  createOder,
+  getOrder,
+  updateOrder,
 };
