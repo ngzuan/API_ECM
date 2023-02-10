@@ -13,9 +13,9 @@ const prodcategoryRouter = require("./routers/prodcategoryRouter");
 const blogcatRouter = require("./routers/blogcatRouter");
 const brandRouter = require("./routers/brandRouter");
 const couponRouter = require("./routers/couponRouter");
-
 const { notFound, errHandler } = require("./middlewares/errHandler");
-
+const swaggerUI = require("swagger-ui-express");
+const swaggeJSDoc = require("swagger-jsdoc");
 dbConnect();
 const PORT = process.env.PORT || 3000;
 
@@ -33,9 +33,24 @@ app.use("/api/v1/blogcat", blogcatRouter);
 app.use("/api/v1/brand", brandRouter);
 app.use("/api/v1/coupon", couponRouter);
 
-app.use(notFound);
-app.use(errHandler);
-
 app.listen(PORT, () => {
   console.log(`Sever is running at PORT ${PORT}`);
 });
+
+// swagger config
+const swaggerOption = {
+  swaggerDefinition: {
+    openapi: "3.0.0",
+    info: {
+      title: "API Documents",
+      version: "2.0.0.2",
+    },
+  },
+  apis: ["./router/*.js"],
+};
+
+const swaggerDocs = swaggeJSDoc(swaggerOption);
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
+
+app.use(notFound);
+app.use(errHandler);
