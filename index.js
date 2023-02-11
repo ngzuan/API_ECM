@@ -50,6 +50,9 @@ const swaggerOption = {
 };
 
 const swaggerDocs = swaggeJSDoc(swaggerOption);
+app.use("/", (req, res) => {
+  res.send("SEVER ON!!!");
+});
 app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerDocs));
 
 app.use(notFound);
