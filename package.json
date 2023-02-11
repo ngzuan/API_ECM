@@ -2,9 +2,6 @@
   "name": "project_1",
   "version": "1.0.0",
   "main": "index.js",
-  "engines": {
-    "node": "14.x"
-  },
   "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -30,5 +27,8 @@
   },
   "scripts": {
     "start": "nodemon ./index.js"
+  },
+  "engines": {
+    "node": "14.x"
   }
 }

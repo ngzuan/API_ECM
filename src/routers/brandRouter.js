@@ -6,7 +6,7 @@ const {
   deleteBrand,
   getAllBrand,
   getBrand,
-} = require("../controllers/BrandCtrl");
+} = require("../controllers/brandCtrl");
 const { isAdmin, authMiddleware } = require("../middlewares/authMiddleware");
 
 router.post("/", authMiddleware, isAdmin, createBrand);
