@@ -16,12 +16,12 @@ const uniqid = require("uniqid");
 
 const createUser = asyncHandler(async (req, res) => {
   const email = req.body.email;
-  // if (validateEmail(email)) {
-  //   throw new Error("Please enter the correct Email!!!");
-  // }
-  // if ((!validateLength(req.body.mobile), 12, 8)) {
-  //   throw new Error("mobile length 8-12 char");
-  // }
+  if (!validateEmail(email)) {
+    throw new Error("Please enter the correct Email!!!");
+  }
+  if (!validateLength(req.body.mobile, 12, 8)) {
+    throw new Error("mobile length 8-12 char");
+  }
   const findUser = await User.findOne({ email: email });
   if (!findUser) {
     const newUser = await User.create(req.body);
