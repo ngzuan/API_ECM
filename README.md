@@ -1,4 +1,18 @@
 Nodejs(MVC)- mongoDb
-
-- authentication(json web token)
-- upload(multer,cloudinary)
+ ##feature
+ -Auhthencation
+ +CRUD User
+ +token
+ +forgotpassword(nodemailer)
+ -Product
+ +CRUD product
+ +wishlist
+ +discount
+ +Upload image product (clouddinary)
+ +review
+ -Blog
+ +CRUD Bolg
+ +Like-dislike
+ +view
+ 
+ 
