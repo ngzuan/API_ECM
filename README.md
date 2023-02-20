@@ -1,18 +1,28 @@
-#Nodejs(MVC)- mongoDb
-##`Feature`
-Auhthencation
-CRUD User
-token
-forgotpassword(nodemailer)
-Product
- +CRUD product
- +wishlist
- +discount
- +Upload image product (clouddinary)
- +review
- -Blog
- +CRUD Bolg
- +Like-dislike
- +view
- 
+# Nodejs(MVC)- mongoDb
+
+## `Feature`
+
+### `Auhthencation`
+* CRUD User
+* token
+* forgotpassword(nodemailer)
+* Login-logout
+* Block-unBlock user
+* Wishlist
+* Cart
+* Oder
+* Coupon
+## `Product`
+* CRUD product
+* Discount
+* Upload image product (clouddinary)
+* Review
+* Category
+### `Blog`
+* CRUD Bolg
+* Like-dislike
+* display views
+* Comment
+* Upload image
+ .....
  
